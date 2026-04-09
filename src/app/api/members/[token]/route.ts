@@ -45,7 +45,12 @@ export async function PUT(
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
-  const body = await request.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
+  }
 
   // Verify token
   const { data: tokenRow, error: tokenError } = await getSupabaseAdmin()

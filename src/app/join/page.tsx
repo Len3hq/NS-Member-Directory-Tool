@@ -43,7 +43,7 @@ export default function JoinPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="border-b border-[var(--border)] bg-white sticky top-0 z-40">
+      <header className="border-b border-[var(--border)] bg-white sticky top-8 z-40">
         <div className="max-w-2xl mx-auto px-5 sm:px-8 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="w-7 h-7 bg-black rounded flex items-center justify-center overflow-hidden">

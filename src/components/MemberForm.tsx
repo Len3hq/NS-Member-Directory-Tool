@@ -11,7 +11,7 @@ interface MemberFormProps {
   isEdit?: boolean;
 }
 
-const specialties = [
+const PRESET_SPECIALTIES = [
   'Software Engineer',
   'Product Manager',
   'Designer (UI/UX)',
@@ -27,8 +27,9 @@ const specialties = [
   'Data Scientist',
   'Hardware / Robotics',
   'Biotech / Health',
-  'Other',
 ];
+
+const SELECT_CUSTOM = '__custom__';
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
@@ -58,6 +59,10 @@ export default function MemberForm({ initialData, onSubmit, submitLabel = 'Join 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>(initialData?.avatar_url ?? '');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Specialty: detect if initial value is custom (not in preset list)
+  const [showCustomSpecialty, setShowCustomSpecialty] = useState(
+    !!(initialData?.specialty && !PRESET_SPECIALTIES.includes(initialData.specialty))
+  );
 
   const set = (field: keyof MemberFormData, value: unknown) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -155,11 +160,33 @@ export default function MemberForm({ initialData, onSubmit, submitLabel = 'Join 
       {/* Specialty */}
       <div>
         <Label>Specialty / Profession <span className="text-red-500">*</span></Label>
-        <select value={form.specialty} onChange={(e) => set('specialty', e.target.value)}
-          className={InputClass('appearance-none cursor-pointer')}>
+        <select
+          value={showCustomSpecialty ? SELECT_CUSTOM : (form.specialty || '')}
+          onChange={(e) => {
+            if (e.target.value === SELECT_CUSTOM) {
+              setShowCustomSpecialty(true);
+              set('specialty', '');
+            } else {
+              setShowCustomSpecialty(false);
+              set('specialty', e.target.value);
+            }
+          }}
+          className={InputClass('appearance-none cursor-pointer')}
+        >
           <option value="" disabled>Select your specialty...</option>
-          {specialties.map((s) => <option key={s} value={s}>{s}</option>)}
+          {PRESET_SPECIALTIES.map((s) => <option key={s} value={s}>{s}</option>)}
+          <option value={SELECT_CUSTOM}>Other (type your own...)</option>
         </select>
+        {showCustomSpecialty && (
+          <input
+            type="text"
+            value={form.specialty}
+            onChange={(e) => set('specialty', e.target.value)}
+            placeholder="Enter your profession..."
+            className={InputClass('mt-2')}
+            autoFocus
+          />
+        )}
       </div>
 
       {/* Building */}
@@ -211,6 +238,7 @@ export default function MemberForm({ initialData, onSubmit, submitLabel = 'Join 
             { key: 'twitter', placeholder: 'Twitter / X handle' },
             { key: 'linkedin', placeholder: 'LinkedIn handle' },
             { key: 'github', placeholder: 'GitHub username' },
+            { key: 'discord', placeholder: 'Discord username' },
             { key: 'website', placeholder: 'Website URL' },
           ].map(({ key, placeholder }) => (
             <input

@@ -89,3 +89,8 @@ body {
 }
 .btn-secondary:hover { background: var(--surface-2); border-color: var(--border-strong); }
 .btn-secondary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}

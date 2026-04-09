@@ -107,13 +107,18 @@ export default function MemberModal({ member, onClose }: MemberModalProps) {
                   GitHub
                 </a>
               )}
+              {member.social_links?.discord && (
+                <span className="btn-secondary text-xs px-3 py-1.5 cursor-default select-all" title="Discord username">
+                  Discord: {member.social_links.discord}
+                </span>
+              )}
               {member.social_links?.website && (
-                <a href={member.social_links.website} target="_blank" rel="noopener noreferrer"
+                <a href={member.social_links.website.startsWith('http') ? member.social_links.website : `https://${member.social_links.website}`} target="_blank" rel="noopener noreferrer"
                   className="btn-secondary text-xs px-3 py-1.5">
                   ↗ Website
                 </a>
               )}
-              {!member.email_visible && !member.social_links?.twitter && !member.social_links?.linkedin && !member.social_links?.github && !member.social_links?.website && (
+              {!member.email_visible && !member.social_links?.twitter && !member.social_links?.linkedin && !member.social_links?.github && !member.social_links?.discord && !member.social_links?.website && (
                 <p className="text-sm text-[var(--muted)]">No public contact info.</p>
               )}
             </div>

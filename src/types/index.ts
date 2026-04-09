@@ -15,6 +15,7 @@ export interface Member {
     linkedin?: string;
     github?: string;
     website?: string;
+    discord?: string;
   };
   created_at: string;
   updated_at: string;
@@ -34,6 +35,7 @@ export interface MemberFormData {
     linkedin?: string;
     github?: string;
     website?: string;
+    discord?: string;
   };
 }
 

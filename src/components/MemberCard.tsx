@@ -60,6 +60,7 @@ export default function MemberCard({ member, onClick }: MemberCardProps) {
           {member.social_links?.twitter && <span className="text-[var(--muted-2)] text-xs">𝕏</span>}
           {member.social_links?.github && <span className="text-[var(--muted-2)] text-xs font-mono text-[10px]">gh</span>}
           {member.social_links?.linkedin && <span className="text-[var(--muted-2)] text-xs font-mono text-[10px]">in</span>}
+          {member.social_links?.discord && <span className="text-[var(--muted-2)] text-xs font-mono text-[10px]">dc</span>}
           {member.social_links?.website && <span className="text-[var(--muted-2)] text-xs">↗</span>}
         </div>
         <span className="text-[11px] text-[var(--muted-2)] opacity-0 group-hover:opacity-100 transition-opacity">

@@ -44,18 +44,31 @@ export default function DirectoryPage() {
   const [specialtyFilter, setSpecialtyFilter] = useState('All Specialties');
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [fetchError, setFetchError] = useState('');
   const filterRef = useRef<HTMLDivElement>(null);
 
   const fetchMembers = useCallback(async () => {
     setLoading(true);
+    setFetchError('');
     const params = new URLSearchParams();
     if (statusFilter !== 'all') params.set('status', statusFilter);
     if (specialtyFilter !== 'All Specialties') params.set('specialty', specialtyFilter);
     if (search) params.set('search', search);
-    const res = await fetch(`/api/members?${params.toString()}`);
-    const data = await res.json();
-    setMembers(data.members ?? []);
-    setLoading(false);
+    try {
+      const res = await fetch(`/api/members?${params.toString()}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setFetchError(data.error || 'Failed to load members.');
+        setMembers([]);
+      } else {
+        setMembers(data.members ?? []);
+      }
+    } catch {
+      setFetchError('Network error. Please check your connection and try again.');
+      setMembers([]);
+    } finally {
+      setLoading(false);
+    }
   }, [statusFilter, specialtyFilter, search]);
 
   useEffect(() => { fetchMembers(); }, [fetchMembers]);
@@ -80,7 +93,7 @@ export default function DirectoryPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header — NS.com style */}
-      <header className="border-b border-[var(--border)] bg-white sticky top-0 z-40">
+      <header className="border-b border-[var(--border)] bg-white sticky top-8 z-40">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 bg-black rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -219,6 +232,19 @@ export default function DirectoryPage() {
             )}
           </div>
         </div>
+
+        {/* Fetch error */}
+        {fetchError && (
+          <div className="border border-red-200 bg-red-50 rounded-xl px-4 py-3 mb-6 flex items-center justify-between gap-3">
+            <p className="text-sm text-red-600">{fetchError}</p>
+            <button
+              onClick={fetchMembers}
+              className="text-xs font-medium text-red-700 hover:underline flex-shrink-0"
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
         {/* Grid */}
         {loading ? (
