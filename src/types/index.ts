@@ -1,4 +1,4 @@
-export type MemberStatus = 'on_campus' | 'off_campus' | 'remote';
+export type MemberStatus = 'on_campus' | 'off_campus';
 
 export interface Member {
   id: string;

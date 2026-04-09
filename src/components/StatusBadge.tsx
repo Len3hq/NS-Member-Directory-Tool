@@ -15,12 +15,6 @@ const statusConfig: Record<MemberStatus, { label: string; textColor: string; dot
     dotColor: 'bg-neutral-400',
     bg: 'bg-neutral-50',
   },
-  remote: {
-    label: 'Remote',
-    textColor: 'text-amber-700',
-    dotColor: 'bg-amber-500',
-    bg: 'bg-amber-50',
-  },
 };
 
 interface StatusBadgeProps {

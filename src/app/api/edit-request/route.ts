@@ -51,22 +51,22 @@ export async function POST(request: NextRequest) {
       html: `
         <!DOCTYPE html>
         <html>
-          <body style="background:#0a0a0a;color:#ededed;font-family:'Courier New',monospace;padding:40px 20px;max-width:520px;margin:0 auto;">
-            <div style="border:1px solid #2a2a2a;border-radius:8px;padding:32px;background:#111111;">
-              <div style="color:#f59e0b;font-size:11px;letter-spacing:0.2em;margin-bottom:24px;text-transform:uppercase;">
+          <body style="background:#f5f5f5;color:#0a0a0a;font-family:'Courier New',monospace;padding:40px 20px;max-width:520px;margin:0 auto;">
+            <div style="border:1px solid #e5e5e5;border-radius:12px;padding:32px;background:#ffffff;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+              <div style="color:#f59e0b;font-size:11px;letter-spacing:0.2em;margin-bottom:24px;text-transform:uppercase;font-weight:600;">
                 Network School Directory
               </div>
-              <h2 style="color:#ededed;font-size:16px;margin:0 0 16px;">Hi ${member.name},</h2>
-              <p style="color:#999;font-size:13px;line-height:1.6;margin:0 0 24px;">
+              <h2 style="color:#0a0a0a;font-size:16px;margin:0 0 16px;font-weight:600;">Hi ${member.name},</h2>
+              <p style="color:#666;font-size:13px;line-height:1.6;margin:0 0 24px;">
                 Here is your private link to update your NS Directory profile. This link expires in 24 hours and can only be used once.
               </p>
               <a href="${editUrl}"
                  style="display:inline-block;background:#f59e0b;color:#000;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:13px;font-weight:bold;letter-spacing:0.05em;">
                 Edit My Profile →
               </a>
-              <p style="color:#555;font-size:11px;margin-top:24px;line-height:1.6;">
+              <p style="color:#999;font-size:11px;margin-top:24px;line-height:1.6;">
                 If you did not request this, you can safely ignore this email.<br/>
-                Link: ${editUrl}
+                Link: <a href="${editUrl}" style="color:#777;">${editUrl}</a>
               </p>
             </div>
           </body>

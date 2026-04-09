@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS members (
   building TEXT NOT NULL,
   bio TEXT,
   avatar_url TEXT,
-  status TEXT DEFAULT 'off_campus' CHECK (status IN ('on_campus', 'off_campus', 'remote')),
+  status TEXT DEFAULT 'off_campus' CHECK (status IN ('on_campus', 'off_campus')),
   social_links JSONB DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()

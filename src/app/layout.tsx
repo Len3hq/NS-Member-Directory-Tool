@@ -41,8 +41,6 @@ export default function RootLayout({
               >
                 @len3
               </a>
-              {' '}&amp;{' '}
-              <span className="font-medium text-[var(--foreground)]">@taoofdev</span>
             </span>
             <a
               href="https://github.com/Len3hq/NS-Member-Directory-Tool"

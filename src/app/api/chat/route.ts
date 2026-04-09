@@ -1,152 +1,85 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseReadonly } from '@/lib/supabase';
+import { getGroqClient, GROQ_MODEL } from '@/agent/runtime';
+import { fetchMemberContext } from '@/agent/providers/members';
+import type { Member } from '@/types';
 
-interface Member {
-  id: string;
-  name: string;
-  specialty: string;
-  building: string;
-  bio: string | null;
-  status: string;
-  email: string | null;
-  email_visible: boolean;
-  avatar_url: string | null;
-  social_links: Record<string, string>;
-}
+const SMALL_TALK = /^(hi+|hello|hey|thanks?|thank you|thx|sup|yo|good morning|good evening|good afternoon|how are you|what'?s up|wassup|ok+|okay|cool|great|awesome|nice|cheers|bye|goodbye|hiya|howdy)[\s!?.]*$/i;
 
-function parseQueryIntent(message: string): {
-  status?: string;
-  specialty?: string;
-  keywords?: string;
-} {
-  const lower = message.toLowerCase();
-  const intent: { status?: string; specialty?: string; keywords?: string } = {};
+const SYSTEM_SMALL_TALK = `You are a friendly assistant for the NS Member Directory.
+When someone greets you or makes small talk, respond warmly in ONE short sentence and ask what kind of person they're looking to connect with. Never mention specific members.`;
 
-  if (lower.includes('on campus') || lower.includes('here') || lower.includes('currently at')) {
-    intent.status = 'on_campus';
-  } else if (lower.includes('off campus') || lower.includes('left')) {
-    intent.status = 'off_campus';
-  } else if (lower.includes('remote')) {
-    intent.status = 'remote';
-  }
+const SYSTEM_LOOKUP = `You are a warm, helpful assistant for the NS Member Directory. You talk like a knowledgeable friend, not a database.
 
-  const specialtyKeywords: [string[], string][] = [
-    [['engineer', 'dev', 'developer', 'coder', 'programmer', 'software'], 'Software Engineer'],
-    [['design', 'ux', 'ui', 'designer'], 'Designer (UI/UX)'],
-    [['founder', 'entrepreneur', 'startup', 'ceo'], 'Founder / Entrepreneur'],
-    [['investor', 'vc', 'venture'], 'Investor / VC'],
-    [['writer', 'journalist', 'content'], 'Writer / Journalist'],
-    [['researcher', 'academic', 'phd'], 'Researcher / Academic'],
-    [['lawyer', 'legal', 'policy', 'attorney'], 'Legal / Policy'],
-    [['marketing', 'growth', 'seo'], 'Marketing / Growth'],
-    [['blockchain', 'crypto', 'web3', 'defi', 'nft', 'solidity'], 'Crypto / Web3'],
-    [['ai', 'ml', 'machine learning', 'llm', 'artificial intelligence'], 'AI / ML Engineer'],
-    [['data', 'analytics', 'scientist'], 'Data Scientist'],
-    [['product', 'pm', 'product manager'], 'Product Manager'],
-    [['hardware', 'robotics', 'embedded'], 'Hardware / Robotics'],
-    [['biotech', 'health', 'medical', 'bio'], 'Biotech / Health'],
-  ];
-
-  for (const [keywords, specialty] of specialtyKeywords) {
-    if (keywords.some((k) => lower.includes(k))) {
-      intent.specialty = specialty;
-      break;
-    }
-  }
-
-  intent.keywords = message;
-  return intent;
-}
-
-const SELECT_FIELDS = 'id, name, specialty, building, bio, status, email, email_visible, avatar_url, social_links';
+Rules:
+- Reply in 1-2 short sentences max — conversational, never robotic.
+- First look for an exact or very close specialty match.
+- If no exact match, suggest the closest adjacent field naturally (e.g. "Not exactly, but [Name] works in [field] and might be able to point you in the right direction.")
+- Only say no one is available if truly no related field exists in the directory.
+- Never suggest someone from a completely unrelated field.
+- For contact, mention only the single most useful one (prefer email, then Twitter, then website) — never dump all links.
+- Sound human. No labels like "email:" or "twitter:" — just say "you can reach them at X" or "find them at X".`;
 
 export async function POST(request: NextRequest) {
-  const { message } = await request.json();
+  let body: { message?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
+  }
 
+  const { message } = body;
   if (!message?.trim()) {
-    return NextResponse.json({ reply: 'Please ask me something about NS members.', members: [] });
+    return NextResponse.json({ reply: 'What are you looking for?', members: [] });
   }
 
-  const lower = message.toLowerCase();
+  try {
+    const isSmallTalk = SMALL_TALK.test(message.trim());
+    const groq = getGroqClient();
 
-  // Greetings
-  if (['hi', 'hello', 'hey', 'sup', 'yo'].some((g) => lower.trim() === g || lower.startsWith(g + ' '))) {
-    return NextResponse.json({
-      reply: "Hi! Ask me to find members by specialty, what they're building, or campus status. Try: \"who's on campus?\" or \"find a blockchain developer\".",
-      members: [],
-    });
-  }
-
-  // Count query
-  if (lower.includes('how many') || lower.includes('count')) {
-    const { count } = await getSupabaseReadonly()
-      .from('members')
-      .select('*', { count: 'exact', head: true });
-    const { count: onCampus } = await getSupabaseReadonly()
-      .from('members')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'on_campus');
-    return NextResponse.json({
-      reply: `${count ?? 0} members total · ${onCampus ?? 0} currently on campus`,
-      members: [],
-    });
-  }
-
-  const intent = parseQueryIntent(message);
-
-  let query = getSupabaseReadonly()
-    .from('members')
-    .select(SELECT_FIELDS)
-    .limit(6);
-
-  if (intent.status) query = query.eq('status', intent.status);
-
-  if (intent.specialty) {
-    query = query.eq('specialty', intent.specialty);
-  } else if (intent.keywords) {
-    query = query.or(
-      `name.ilike.%${intent.keywords}%,specialty.ilike.%${intent.keywords}%,building.ilike.%${intent.keywords}%,bio.ilike.%${intent.keywords}%`
-    );
-  }
-
-  const { data: members, error } = await query;
-
-  if (error) {
-    return NextResponse.json({ reply: 'Search failed. Please try again.', members: [] });
-  }
-
-  if (!members || members.length === 0) {
-    // Retry with broader search
-    if (intent.specialty) {
-      const { data: fallback } = await getSupabaseReadonly()
-        .from('members')
-        .select(SELECT_FIELDS)
-        .or(`building.ilike.%${message}%,bio.ilike.%${message}%`)
-        .limit(6);
-
-      if (fallback && fallback.length > 0) {
-        const sanitized = fallback.map((m) => ({ ...m, email: m.email_visible ? m.email : null }));
-        return NextResponse.json({
-          reply: `No exact match for "${intent.specialty}" — here are some related members:`,
-          members: sanitized,
-        });
-      }
+    if (isSmallTalk) {
+      const res = await groq.chat.completions.create({
+        model: GROQ_MODEL,
+        max_tokens: 60,
+        temperature: 0.5,
+        messages: [
+          { role: 'system', content: SYSTEM_SMALL_TALK },
+          { role: 'user', content: message },
+        ],
+      });
+      return NextResponse.json({
+        reply: res.choices[0]?.message?.content?.trim() ?? 'Hey! What can I help you find?',
+        members: [],
+      });
     }
 
-    return NextResponse.json({
-      reply: `No members found for "${message}". Try: "blockchain developer", "who's on campus?", or "find a founder".`,
-      members: [],
+    // Member lookup
+    const { text: memberContext, members: allMembers } = await fetchMemberContext();
+
+    const res = await groq.chat.completions.create({
+      model: GROQ_MODEL,
+      max_tokens: 80,
+      temperature: 0.2,
+      messages: [
+        { role: 'system', content: SYSTEM_LOOKUP },
+        {
+          role: 'user',
+          content: `Directory:\n${memberContext}\n\nRequest: "${message}"`,
+        },
+      ],
     });
+
+    const reply = res.choices[0]?.message?.content?.trim() ?? 'No results found.';
+
+    const mentionedMembers = allMembers.filter((m: Member) =>
+      reply.toLowerCase().includes(m.name.toLowerCase())
+    );
+
+    return NextResponse.json({ reply, members: mentionedMembers.slice(0, 3) });
+  } catch (err) {
+    console.error('[/api/chat]', err);
+    return NextResponse.json(
+      { reply: 'The agent is temporarily unavailable. Please try again shortly.', members: [] },
+      { status: 500 }
+    );
   }
-
-  const sanitized = (members as Member[]).map((m) => ({
-    ...m,
-    email: m.email_visible ? m.email : null,
-  }));
-
-  const statusNote = intent.status === 'on_campus' ? ' on campus' : intent.status === 'remote' ? ' remote' : '';
-  const specialtyNote = intent.specialty ? ` · ${intent.specialty}` : '';
-  const reply = `Found ${members.length} member${members.length > 1 ? 's' : ''}${specialtyNote}${statusNote}`;
-
-  return NextResponse.json({ reply, members: sanitized });
 }

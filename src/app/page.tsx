@@ -11,7 +11,6 @@ import ChatWidget from '@/components/ChatWidget';
 const STATUSES = [
   { value: 'all', label: 'All statuses', dot: null },
   { value: 'on_campus', label: 'On Campus', dot: 'bg-emerald-500' },
-  { value: 'remote', label: 'Remote', dot: 'bg-amber-500' },
   { value: 'off_campus', label: 'Off Campus', dot: 'bg-neutral-400' },
 ];
 

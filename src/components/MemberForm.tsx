@@ -81,7 +81,7 @@ export default function MemberForm({ initialData, onSubmit, submitLabel = 'Join 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    if (!form.name || !form.email || !form.specialty || !form.building) {
+    if (!form.name || !form.email || !form.specialty) {
       setError('Please fill in all required fields.');
       return;
     }
@@ -191,7 +191,7 @@ export default function MemberForm({ initialData, onSubmit, submitLabel = 'Join 
 
       {/* Building */}
       <div>
-        <Label>What are you building? <span className="text-red-500">*</span></Label>
+        <Label>What are you building? <span className="text-xs font-normal text-[var(--muted)]">(optional)</span></Label>
         <input type="text" value={form.building} onChange={(e) => set('building', e.target.value)}
           placeholder="A decentralized identity protocol..." className={InputClass()} />
       </div>
@@ -211,7 +211,6 @@ export default function MemberForm({ initialData, onSubmit, submitLabel = 'Join 
           {([
             { value: 'on_campus', label: 'On Campus', dot: 'bg-emerald-500' },
             { value: 'off_campus', label: 'Off Campus', dot: 'bg-neutral-400' },
-            { value: 'remote', label: 'Remote', dot: 'bg-amber-500' },
           ] as { value: MemberStatus; label: string; dot: string }[]).map(({ value, label, dot }) => (
             <button
               key={value}

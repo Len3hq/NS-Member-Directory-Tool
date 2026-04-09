@@ -6,11 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "telegram:poll": "node --env-file=.env.local scripts/telegram-poll.js",
+    "docker:build": "docker build --build-arg NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY --build-arg NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL -t ns-directory .",
+    "docker:up": "docker run -d --name ns-directory -p 3001:3000 --env-file .env.local ns-directory",
+    "docker:down": "docker rm -f ns-directory",
+    "docker:logs": "docker logs -f ns-directory"
   },
   "dependencies": {
     "@elizaos/core": "^2.0.0-alpha.77",
     "@supabase/supabase-js": "^2.102.1",
+    "groq-sdk": "^1.1.2",
     "next": "16.2.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
